@@ -1,0 +1,45 @@
+name: Check Build
+
+on: [pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container:
+      image: eventjet/checks-7.4:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Composer Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.COMPOSER_CACHE }}
+            vendor
+          key: ${{ runner.os }}-composer
+
+      - name: Install dependencies
+        run: |
+          composer update --no-progress --no-interaction > /dev/null
+
+      - name: Static analysis
+        run: |
+          composer check-deps
+          composer cs-check
+          composer phpstan -- --no-progress
+
+      - name: Tests
+        run: |
+          vendor/bin/phpunit --coverage-clover=coverage.xml --stop-on-failure
+
+      - name: Monitor coverage
+        if: github.event_name == 'pull_request'
+        uses: slavcodev/coverage-monitor-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          clover_file: "coverage.xml"
+          threshold_alert: 100
+          threshold_warning: 100

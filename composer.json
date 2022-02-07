@@ -1,0 +1,89 @@
+{
+  "name": "kaiseki/wp-favicon",
+  "type": "library",
+  "description": "",
+  "keywords": [
+    "wordpress",
+    "module"
+  ],
+  "license": "proprietary",
+  "homepage": "https://github.com/kaisekidev/wp-favicon",
+  "authors": [
+    {
+      "name": "Kaiseki",
+      "email": "hello@kaiseki.dev",
+      "homepage": "https://www.kaiseki.dev",
+      "role": "Organization"
+    },
+    {
+      "name": "David Mondok",
+      "email": "david@woda.at",
+      "homepage": "https://github.com/davidmondok",
+      "role": "Developer"
+    },
+    {
+      "name": "Wolfgang Schaefer",
+      "email": "wolfgang@woda.at",
+      "homepage": "https://github.com/wolfgangschaefer",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/kaisekidev/wp-favicon/issues",
+    "source": "https://github.com/kaisekidev/wp-favicon"
+  },
+  "autoload": {
+    "psr-4": {
+      "Kaiseki\\WordPress\\Favicon\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Kaiseki\\Test\\Functional\\WordPress\\Favicon\\": "tests/functional",
+      "Kaiseki\\Test\\Unit\\WordPress\\Favicon\\": "tests/unit"
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://wpackagist.org"
+    }
+  ],
+  "require": {
+    "php": "^7.4",
+    "kaiseki/wp-config": "^1.0",
+    "kaiseki/wp-hook": "^1.0",
+    "psr/container": "^1.1",
+    "thecodingmachine/safe": "^1.3"
+  },
+  "require-dev": {
+    "eventjet/coding-standard": "^3.2",
+    "maglnet/composer-require-checker": "^3.5",
+    "php-stubs/wordpress-stubs": "^5.8",
+    "phpstan/extension-installer": "^1.1",
+    "phpstan/phpstan": "^1.2",
+    "phpstan/phpstan-phpunit": "^1.0",
+    "phpstan/phpstan-strict-rules": "^1.1",
+    "phpunit/phpunit": "^9.5",
+    "szepeviktor/phpstan-wordpress": "^1.0",
+    "thecodingmachine/phpstan-safe-rule": "^1.0"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "scripts": {
+    "check": [
+      "@check-deps",
+      "@cs-check",
+      "@phpstan",
+      "@phpunit"
+    ],
+    "check-deps": "vendor/bin/composer-require-checker check --config-file=require-checker.config.json",
+    "cs-check": "vendor/bin/phpcs",
+    "cs-fix": "vendor/bin/phpcbf",
+    "phpstan": "vendor/bin/phpstan analyse",
+    "phpstan-pro": "vendor/bin/phpstan analyse --pro",
+    "phpunit": "vendor/bin/phpunit"
+  }
+}

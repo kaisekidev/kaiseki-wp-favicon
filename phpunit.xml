@@ -1,0 +1,23 @@
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+        bootstrap="vendor/autoload.php"
+        beStrictAboutChangesToGlobalState="true"
+        beStrictAboutOutputDuringTests="true"
+        verbose="true"
+        convertDeprecationsToExceptions="true"
+>
+    <testsuites>
+        <testsuite name="Kaiseki\Test\Unit\WordPress\Favicon">
+            <directory>tests/unit</directory>
+        </testsuite>
+        <testsuite name="Kaiseki\Test\Functional\WordPress\Favicon">
+            <directory>tests/functional</directory>
+        </testsuite>
+    </testsuites>
+    <coverage>
+        <include>
+            <directory>src</directory>
+        </include>
+    </coverage>
+</phpunit>
