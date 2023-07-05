@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Kaiseki\WordPress\Favicon;
 
 use Kaiseki\WordPress\Hook\HookCallbackProviderInterface;
-use RuntimeException;
 
 use function is_string;
 use function ltrim;
@@ -16,66 +15,74 @@ use const PHP_URL_PATH;
 
 class Favicon implements HookCallbackProviderInterface
 {
-    private string $template;
-    private string $adminTemplate;
-    private string $path;
-    private string $adminPath;
-    private bool $showInAdmin;
-    private bool $relativeToRoot;
-
     public function __construct(
-        string $template,
-        string $adminTemplate,
-        string $path,
-        string $adminPath,
-        bool $showInAdmin,
-        bool $relativeToRoot
+        private readonly string $path,
+        private readonly string $adminPath = '',
+        private readonly bool $showInAdmin = true,
     ) {
-        $this->template = $template;
-        $this->adminTemplate = $adminTemplate;
-        $this->path = $path;
-        $this->adminPath = $adminPath;
-        $this->showInAdmin = $showInAdmin;
-        $this->relativeToRoot = $relativeToRoot;
     }
 
-    public function registerCallbacks(): void
+    public function registerHookCallbacks(): void
     {
-        if (is_admin() === false) {
-            add_filter('get_site_icon_url', '__return_false');
+        add_action('wp_head', [$this, 'renderFrontendFavicon'], 5);
+        add_action('login_head', [$this, 'renderFrontendFavicon'], 5);
+        $this->registerAdminHookCallbacks();
+    }
+
+    private function registerAdminHookCallbacks(): void
+    {
+        $callback = '';
+        if ($this->adminPath !== '') {
+            $callback = 'renderAdminFavicon';
+        } elseif ($this->path !== '' && $this->showInAdmin) {
+            $callback = 'renderFrontendFavicon';
         }
-        add_action('wp_head', [$this, 'renderFrontendFavicon']);
-        if ($this->showInAdmin !== true) {
+        if ($callback === '') {
             return;
         }
-
         add_filter('get_site_icon_url', '__return_false');
-        add_action('admin_head', [$this, 'renderAdminFavicon']);
+        add_action('admin_head', [$this, $callback]);
     }
 
     public function renderFrontendFavicon(): void
     {
+        if ($this->path === '') {
+            return;
+        }
         $this->renderFavicon($this->getPath($this->path));
     }
 
     public function renderAdminFavicon(): void
     {
-        printf($this->adminTemplate, $this->getPath($this->adminPath !== '' ? $this->adminPath : $this->path));
+        if ($this->adminPath === '') {
+            return;
+        }
+        $this->renderFavicon($this->getPath($this->adminPath), true);
     }
 
-    public function renderFavicon(string $path): void
+    public function renderFavicon(string $path, bool $simple = false): void
     {
-        printf($this->template, $this->getPath($path));
+        printf(
+            '<link rel="icon" href="%1$s/favicon.ico" sizes="any">' .
+            '<link rel="icon" href="%1$s/icon.svg" type="image/svg+xml">',
+            rtrim($path, '/'),
+        );
+        if ($simple === true) {
+            return;
+        }
+        printf(
+            '<link rel="apple-touch-icon" href="%1$s/apple-touch-icon.png">' .
+            '<link rel="manifest" href="%1$s/manifest.json" crossOrigin="use-credentials">',
+            rtrim($path, '/'),
+        );
     }
 
     private function getPath(string $path): string
     {
         $themeUrlPath = \Safe\parse_url(get_stylesheet_directory_uri(), PHP_URL_PATH);
         if (!is_string($themeUrlPath)) {
-            throw new RuntimeException('No string return by get_stylesheet_directory_uri()');
+            return ltrim($path, '/');
         }
-        return $this->relativeToRoot === true
-            ? $path
-            : rtrim($themeUrlPath, '/') . '/' . ltrim($path, '/');
+        return rtrim($themeUrlPath, '/') . '/' . ltrim($path, '/');
     }
 }
