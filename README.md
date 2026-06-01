@@ -20,10 +20,13 @@ Requires PHP 8.2 or newer.
 Register `ConfigProvider` with your laminas-style config aggregator and configure the `favicon` key:
 
 ```php
+use Kaiseki\WordPress\Favicon\Favicon;
+
 return [
     'favicon' => [
-        // Directory (relative to the site root) holding the icon assets.
-        'path' => '/wp-content/themes/my-theme/assets/favicon',
+        // Directory holding the icon assets, relative to the active theme directory
+        // (the theme directory URI is prepended automatically).
+        'path' => 'assets/favicon',
         // Optional separate directory for the admin; falls back to `path`.
         'admin_path' => '',
         // Whether to also render the favicon in the admin when no admin_path is set.
