@@ -1,0 +1,78 @@
+# Template — copy to each package's .github/workflows/update-changelog.yml
+#
+# Keeps CHANGELOG.md in sync automatically, the PR-based way: when you publish a
+# GitHub Release, this updates CHANGELOG.md from the release notes and opens an
+# auto-merging PR with the change. PR-based (not a direct push to master) so it
+# works UNDER the org branch-protection baseline (PR required, enforce admins,
+# no bypass) — no plan upgrade needed.
+#
+# Workflow to cut a release (no manual changelog editing):
+#   gh release create X.Y.Z --generate-notes --title X.Y.Z --target master
+# Tags are bare semver (no `v` prefix); the explicit --title keeps the release
+# name in sync with the tag so the changelog heading is `## X.Y.Z`, not `## vX.Y.Z`.
+# GitHub builds the "What's Changed" notes from merged PR titles; this then
+# writes them into CHANGELOG.md under `## X.Y.Z - <date>` and opens the PR.
+#
+# ── PREREQUISITES (one-time, per repo or org) ──────────────────────────────
+# 1. REQUIRED on the kaisekidev org: a `CHANGELOG_TOKEN` secret (fine-grained
+#    PAT with contents + pull-requests: write, or a GitHub App token). The org
+#    forbids the Actions GITHUB_TOKEN from opening PRs org-wide, so WITHOUT this
+#    token the "Open changelog PR" step fails. A PAT/App token also makes the PR
+#    trigger checks.yml, so required `checks / build (8.x)` run and auto-merge
+#    can complete. Set it: `gh secret set CHANGELOG_TOKEN -R kaisekidev/<repo>`.
+#    (The `|| github.token` fallback below is for other orgs that allow Actions
+#    PRs; on kaisekidev it will NOT work — set the secret.)
+# 2. "Allow auto-merge" must be enabled on the repo for the PR to land hands-off
+#    (`gh repo edit <repo> --enable-auto-merge`). If off, the PR is still opened
+#    — just merge it manually (one click).
+#    See docs/governance/repo-defaults.md.
+
+name: Update Changelog
+
+on:
+  release:
+    types: [released]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: master
+
+      - name: Update Changelog
+        uses: stefanzweifel/changelog-updater-action@v1
+        with:
+          latest-version: ${{ github.event.release.name }}
+          release-notes: ${{ github.event.release.body }}
+
+      - name: Open changelog PR
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.CHANGELOG_TOKEN || github.token }}
+          base: master
+          branch: changelog/${{ github.event.release.tag_name }}
+          delete-branch: true
+          commit-message: "Update CHANGELOG for ${{ github.event.release.tag_name }}"
+          title: "Update CHANGELOG for ${{ github.event.release.tag_name }}"
+          labels: changelog
+          body: |
+            Automated changelog update for release **${{ github.event.release.tag_name }}**,
+            generated from the release notes by `changelog-updater-action`.
+
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        env:
+          GH_TOKEN: ${{ secrets.CHANGELOG_TOKEN || github.token }}
+        # Best-effort: if "Allow auto-merge" is off, don't fail the run — the PR
+        # stays open for a one-click manual merge.
+        run: |
+          gh pr merge --squash --auto "${{ steps.cpr.outputs.pull-request-number }}" \
+            || echo "::notice::auto-merge unavailable — merge PR #${{ steps.cpr.outputs.pull-request-number }} manually"

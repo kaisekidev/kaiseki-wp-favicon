@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Kaiseki\WordPress\Favicon;
 
-use Kaiseki\WordPress\Hook\HookCallbackProviderInterface;
+use Kaiseki\WordPress\Hook\HookProviderInterface;
 
+use function add_action;
+use function add_filter;
+use function get_stylesheet_directory_uri;
 use function is_string;
 use function ltrim;
 use function printf;
@@ -13,7 +16,7 @@ use function rtrim;
 
 use const PHP_URL_PATH;
 
-class Favicon implements HookCallbackProviderInterface
+class Favicon implements HookProviderInterface
 {
     public function __construct(
         private readonly string $path,
@@ -22,7 +25,7 @@ class Favicon implements HookCallbackProviderInterface
     ) {
     }
 
-    public function registerHookCallbacks(): void
+    public function addHooks(): void
     {
         add_action('wp_head', [$this, 'renderFrontendFavicon'], 5);
         add_action('login_head', [$this, 'renderFrontendFavicon'], 5);
@@ -83,6 +86,7 @@ class Favicon implements HookCallbackProviderInterface
         if (!is_string($themeUrlPath)) {
             return ltrim($path, '/');
         }
+
         return rtrim($themeUrlPath, '/') . '/' . ltrim($path, '/');
     }
 }

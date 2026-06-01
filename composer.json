@@ -1,9 +1,9 @@
 {
   "name": "kaiseki/wp-favicon",
   "type": "library",
-  "description": "",
+  "description": "Render favicon and touch-icon link tags on the WordPress front end, admin and login screens",
   "license": "MIT",
-  "homepage": "https://github.com/kaisekidev/wp-favicon",
+  "homepage": "https://github.com/kaisekidev/kaiseki-wp-favicon",
   "authors": [
     {
       "name": "Kaiseki",
@@ -25,39 +25,35 @@
     }
   ],
   "support": {
-    "issues": "https://github.com/kaisekidev/wp-favicon/issues",
-    "source": "https://github.com/kaisekidev/wp-favicon"
+    "issues": "https://github.com/kaisekidev/kaiseki-wp-favicon/issues",
+    "source": "https://github.com/kaisekidev/kaiseki-wp-favicon"
   },
   "require": {
-    "php": "^8.1",
-    "kaiseki/config": "dev-master",
-    "kaiseki/wp-hook": "dev-master",
-    "psr/container": "^1.1",
-    "thecodingmachine/safe": "^1.3"
+    "php": "^8.2",
+    "kaiseki/config": "^2.0",
+    "kaiseki/wp-hook": "^2.0",
+    "psr/container": "^1.1 || ^2.0",
+    "thecodingmachine/safe": "^2.0"
   },
   "require-dev": {
-    "bnf/phpstan-psr-container": "^1.0",
-    "friendsofphp/php-cs-fixer": "^3.21",
-    "kaiseki/php-coding-standard": "dev-master",
-    "maglnet/composer-require-checker": "^3.5",
+    "bnf/phpstan-psr-container": "^1.1",
+    "kaiseki/php-coding-standard": "^1.0",
+    "maglnet/composer-require-checker": "^4.0",
     "php-stubs/wordpress-stubs": "^6.2",
-    "phpstan/extension-installer": "^1.3",
-    "phpstan/phpstan": "^1.2",
-    "phpstan/phpstan-phpunit": "^1.0",
-    "phpstan/phpstan-strict-rules": "^1.1",
-    "phpunit/phpunit": "^9.5",
+    "phpstan/extension-installer": "^1.4",
+    "phpstan/phpstan": "^2.0",
+    "phpstan/phpstan-phpunit": "^2.0",
+    "phpstan/phpstan-strict-rules": "^2.0",
+    "phpunit/phpunit": "^11.0",
     "roave/security-advisories": "dev-latest",
-    "roots/wordpress": "@stable",
-    "squizlabs/php_codesniffer": "^3.7.1",
-    "szepeviktor/phpstan-wordpress": "^1.3",
-    "thecodingmachine/phpstan-safe-rule": "^1.1"
+    "szepeviktor/phpstan-wordpress": "^2.0",
+    "thecodingmachine/phpstan-safe-rule": "^1.4"
   },
   "config": {
     "sort-packages": true,
     "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true,
       "phpstan/extension-installer": true,
-      "roots/wordpress-core-installer": true
+      "composer/installers": true
     },
     "process-timeout": 0
   },
@@ -74,26 +70,16 @@
   },
   "repositories": [],
   "minimum-stability": "stable",
-  "extra": {
-    "wordpress-install-dir": "vendor/wordpress/wordpress"
-  },
   "scripts": {
     "check": [
       "@check-deps",
       "@cs-check",
       "@phpstan"
     ],
-    "fix": [
-      "@cs-fix",
-      "@cs-fixer"
-    ],
-    "check-deps": "vendor/bin/composer-require-checker --config-file=require-checker.config.json",
-    "cs-check": "vendor/bin/phpcs -s",
-    "cs-fix": "vendor/bin/phpcbf",
-    "cs-fixer": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php",
-    "phpstan": "vendor/bin/phpstan analyse --memory-limit 1G",
-    "phpstan-pro": "vendor/bin/phpstan analyse --pro --memory-limit 1G",
-    "phpunit": "vendor/bin/phpunit",
-    "deploy": "vendor/bin/dep deploy"
+    "check-deps": "composer-require-checker --config-file=require-checker.config.json",
+    "cs-check": "php-cs-fixer fix --dry-run",
+    "cs-fix": "php-cs-fixer fix --allow-risky=yes",
+    "phpstan": "phpstan analyse --memory-limit 1G",
+    "phpunit": "phpunit"
   }
 }

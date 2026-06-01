@@ -1,6 +1,6 @@
+includes:
+    - vendor/kaiseki/php-coding-standard/phpstan/kaiseki.neon
 parameters:
-    level: max
-    treatPhpDocTypesAsCertain: false
     paths:
-        - src/
-        - tests/
+        - src
+        - tests
