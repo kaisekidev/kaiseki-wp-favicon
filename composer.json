@@ -68,7 +68,15 @@
       "Kaiseki\\Test\\Unit\\WordPress\\Favicon\\": "tests/unit"
     }
   },
-  "repositories": [],
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://wpackagist.org",
+      "only": [
+        "wpackagist-plugin/*"
+      ]
+    }
+  ],
   "minimum-stability": "stable",
   "scripts": {
     "check": [
