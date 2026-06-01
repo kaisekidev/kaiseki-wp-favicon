@@ -14,9 +14,9 @@ class FaviconFactory
         $config = Config::fromContainer($container);
 
         return new Favicon(
-            $config->string('favicon.path'),
-            $config->string('favicon.admin_path'),
-            $config->bool('favicon.show_in_admin'),
+            $config->string('favicon.path', ''),
+            $config->string('favicon.admin_path', ''),
+            $config->bool('favicon.show_in_admin', true),
         );
     }
 }
