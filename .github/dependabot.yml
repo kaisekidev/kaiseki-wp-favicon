@@ -1,3 +1,13 @@
+# Dependabot config for kaiseki/* packages.
+#
+# Keeps dev tooling (phpstan, php-cs-fixer, phpunit, ...) and GitHub Actions up to
+# date. Dev dependencies AND all GitHub Actions are each grouped into a single
+# weekly PR to cut noise (a fresh config otherwise opens one PR per action per
+# repo). Production (runtime) composer deps get individual PRs because they affect
+# downstream consumers and warrant review. Production majors that don't build
+# green yet are held under `ignore` (below) — drop the entry once the package
+# builds on that major.
+
 version: 2
 updates:
   - package-ecosystem: composer
@@ -13,6 +23,17 @@ updates:
         dependency-type: development
         patterns:
           - "*"
+    ignore:
+      # respect/validation 3.x requires PHP 8.5 — hold at ^2.x while we target 8.4.
+      - dependency-name: "respect/validation"
+        update-types: ["version-update:semver-major"]
+      # thecodingmachine/safe 3.x — held: packages don't build green on this major
+      # yet. Revisit when the code is adapted to the v3 API / the PHP floor rises.
+      - dependency-name: "thecodingmachine/safe"
+        update-types: ["version-update:semver-major"]
+      # jjgrainger/posttypes 3.x — held: the wrapper isn't updated for v3 yet.
+      - dependency-name: "jjgrainger/posttypes"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -22,3 +43,7 @@ updates:
     labels:
       - dependencies
       - github-actions
+    groups:
+      github-actions:
+        patterns:
+          - "*"
