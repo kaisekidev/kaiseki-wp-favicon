@@ -13,16 +13,24 @@
 # GitHub builds the "What's Changed" notes from merged PR titles; this then
 # writes them into CHANGELOG.md under `## X.Y.Z - <date>` and opens the PR.
 #
-# ── PREREQUISITES (one-time, per repo or org) ──────────────────────────────
-# 1. REQUIRED on the kaisekidev org: a `CHANGELOG_TOKEN` secret (fine-grained
-#    PAT with contents + pull-requests: write, or a GitHub App token). The org
-#    forbids the Actions GITHUB_TOKEN from opening PRs org-wide, so WITHOUT this
-#    token the "Open changelog PR" step fails. A PAT/App token also makes the PR
-#    trigger checks.yml, so required `checks / build (8.x)` run and auto-merge
-#    can complete. Set it: `gh secret set CHANGELOG_TOKEN -R kaisekidev/<repo>`.
-#    (The `|| github.token` fallback below is for other orgs that allow Actions
-#    PRs; on kaisekidev it will NOT work — set the secret.)
-# 2. "Allow auto-merge" must be enabled on the repo for the PR to land hands-off
+# ── HOW IT AUTHENTICATES ────────────────────────────────────────────────────
+# The org forbids the Actions GITHUB_TOKEN from opening PRs, so this mints a
+# short-lived token from the org's `kaiseki-doc-bot` GitHub App instead of a
+# per-repo PAT. The App token also makes the PR trigger checks.yml, so the
+# required `checks / build (8.x)` run and auto-merge can complete. The token is
+# generated fresh each run and expires shortly after, so there is no per-repo
+# secret to manage — the only stored credential is the org-level App private key
+# (`APP_PRIVATE_KEY`), shared by every repo.
+#
+# ── PREREQUISITES (one-time, org-wide) ──────────────────────────────────────
+# 1. The `kaiseki-doc-bot` App (contents + pull-requests: write) must have access
+#    to the repo. In org Settings → GitHub Apps → kaiseki-doc-bot → Configure,
+#    set "Repository access" to All repositories (recommended) or add the repo.
+# 2. The `APP_ID` and `APP_PRIVATE_KEY` org secrets must be readable by the repo.
+#    Set their "Repository access" to All repositories (recommended), or add the
+#    repo: `gh api -X PUT /orgs/kaisekidev/actions/secrets/APP_ID/repositories/<id>`
+#    (same for APP_PRIVATE_KEY).
+# 3. "Allow auto-merge" must be enabled on the repo for the PR to land hands-off
 #    (`gh repo edit <repo> --enable-auto-merge`). If off, the PR is still opened
 #    — just merge it manually (one click).
 #    See docs/governance/repo-defaults.md.
@@ -33,14 +41,21 @@ on:
   release:
     types: [released]
 
+# The App token does the writing; the workflow's own GITHUB_TOKEN only reads.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate a token from the kaiseki-doc-bot app
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v6
         with:
@@ -56,7 +71,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.CHANGELOG_TOKEN || github.token }}
+          token: ${{ steps.app-token.outputs.token }}
           base: master
           branch: changelog/${{ github.event.release.tag_name }}
           delete-branch: true
@@ -70,7 +85,7 @@ jobs:
       - name: Enable auto-merge
         if: steps.cpr.outputs.pull-request-operation == 'created'
         env:
-          GH_TOKEN: ${{ secrets.CHANGELOG_TOKEN || github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         # Best-effort: if "Allow auto-merge" is off, don't fail the run — the PR
         # stays open for a one-click manual merge.
         run: |
