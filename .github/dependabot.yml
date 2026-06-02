@@ -1,17 +1,12 @@
-# Dependabot config — copy to `.github/dependabot.yml` in each kaiseki/* package.
+# Dependabot config for kaiseki/* packages.
 #
-# Keeps dev tooling (phpstan, php-cs-fixer, phpunit, ...) and GitHub Actions up
-# to date so the one-off 8.4 migration doesn't recur. Dev dependencies AND all
-# GitHub Actions are each grouped into a single weekly PR to cut noise (a fresh
-# config otherwise opens one PR per action per repo); production (runtime)
-# composer deps get individual PRs because they affect downstream consumers and
-# warrant review. Production majors we can't yet support are held under `ignore`
-# (see below) — remove the entry once the package's CI is green on that major.
-#
-# NOTE: Dependabot can only manage the internal kaiseki/* deps once they are on
-# SemVer ranges (e.g. ^1.0). While they are still `dev-master` it leaves them
-# alone — which is fine; the SemVer migration (IMPLEMENTATION_PLAN.md §6) fixes
-# that.
+# Keeps dev tooling (phpstan, php-cs-fixer, phpunit, ...) and GitHub Actions up to
+# date. Dev dependencies AND all GitHub Actions are each grouped into a single
+# weekly PR to cut noise (a fresh config otherwise opens one PR per action per
+# repo). Production (runtime) composer deps get individual PRs because they affect
+# downstream consumers and warrant review. Production majors that don't build
+# green yet are held under `ignore` (below) — drop the entry once the package
+# builds on that major.
 
 version: 2
 updates:
@@ -32,13 +27,11 @@ updates:
       # respect/validation 3.x requires PHP 8.5 — hold at ^2.x while we target 8.4.
       - dependency-name: "respect/validation"
         update-types: ["version-update:semver-major"]
-      # thecodingmachine/safe 3.x — held: 1.0 CI is red on this major
-      # (kaiseki-config, kaiseki-wp-config, kaiseki-wp-context). Revisit when we
-      # adapt to the safe 3 API / raise the PHP floor.
+      # thecodingmachine/safe 3.x — held: packages don't build green on this major
+      # yet. Revisit when the code is adapted to the v3 API / the PHP floor rises.
       - dependency-name: "thecodingmachine/safe"
         update-types: ["version-update:semver-major"]
-      # jjgrainger/posttypes 3.x — held: 1.0 CI is red on this major
-      # (kaiseki-wp-post-types). Revisit when the wrapper is updated for v3.
+      # jjgrainger/posttypes 3.x — held: the wrapper isn't updated for v3 yet.
       - dependency-name: "jjgrainger/posttypes"
         update-types: ["version-update:semver-major"]
 
