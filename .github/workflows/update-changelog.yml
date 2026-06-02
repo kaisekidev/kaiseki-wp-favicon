@@ -1,39 +1,27 @@
 # Template — copy to each package's .github/workflows/update-changelog.yml
 #
-# Keeps CHANGELOG.md in sync automatically, the PR-based way: when you publish a
-# GitHub Release, this updates CHANGELOG.md from the release notes and opens an
-# auto-merging PR with the change. PR-based (not a direct push to master) so it
-# works UNDER the org branch-protection baseline (PR required, enforce admins,
-# no bypass) — no plan upgrade needed.
+# Thin caller that delegates to the shared reusable workflow, which lives in
+# kaisekidev/.github (.github/workflows/update-changelog.yml@v1). On a published
+# GitHub Release the reusable workflow updates CHANGELOG.md from the release notes
+# and opens an auto-merging PR.
 #
-# Workflow to cut a release (no manual changelog editing):
-#   gh release create X.Y.Z --generate-notes --title X.Y.Z --target master
-# Tags are bare semver (no `v` prefix); the explicit --title keeps the release
-# name in sync with the tag so the changelog heading is `## X.Y.Z`, not `## vX.Y.Z`.
-# GitHub builds the "What's Changed" notes from merged PR titles; this then
-# writes them into CHANGELOG.md under `## X.Y.Z - <date>` and opens the PR.
+# All the action pins (create-github-app-token, checkout, changelog-updater,
+# create-pull-request) live in the reusable workflow, so there is NOTHING here
+# for Dependabot to bump — that's the whole point of centralizing it (mirrors the
+# checks.caller-template.yml pattern). See
+# ../docs/governance/repo-defaults.md → "Release & changelog automation".
 #
-# ── HOW IT AUTHENTICATES ────────────────────────────────────────────────────
-# The org forbids the Actions GITHUB_TOKEN from opening PRs, so this mints a
-# short-lived token from the org's `kaiseki-doc-bot` GitHub App instead of a
-# per-repo PAT. The App token also makes the PR trigger checks.yml, so the
-# required `checks / build (8.x)` run and auto-merge can complete. The token is
-# generated fresh each run and expires shortly after, so there is no per-repo
-# secret to manage — the only stored credential is the org-level App private key
-# (`APP_PRIVATE_KEY`), shared by every repo.
+# `secrets: inherit` passes the org `APP_ID` / `APP_PRIVATE_KEY` secrets through
+# to the reusable workflow, which mints the kaiseki-doc-bot App token.
 #
-# ── PREREQUISITES (one-time, org-wide) ──────────────────────────────────────
-# 1. The `kaiseki-doc-bot` App (contents + pull-requests: write) must have access
-#    to the repo. In org Settings → GitHub Apps → kaiseki-doc-bot → Configure,
-#    set "Repository access" to All repositories (recommended) or add the repo.
-# 2. The `APP_ID` and `APP_PRIVATE_KEY` org secrets must be readable by the repo.
-#    Set their "Repository access" to All repositories (recommended), or add the
-#    repo: `gh api -X PUT /orgs/kaisekidev/actions/secrets/APP_ID/repositories/<id>`
-#    (same for APP_PRIVATE_KEY).
-# 3. "Allow auto-merge" must be enabled on the repo for the PR to land hands-off
-#    (`gh repo edit <repo> --enable-auto-merge`). If off, the PR is still opened
-#    — just merge it manually (one click).
-#    See docs/governance/repo-defaults.md.
+# PREREQUISITES (one-time, org-wide — all ✓ done; a new repo needs nothing):
+#   1. kaiseki-doc-bot App (contents + pull-requests: write) has repo access.
+#   2. APP_ID / APP_PRIVATE_KEY org secrets are readable by the repo.
+#   3. "Allow auto-merge" is enabled on the repo (gh repo edit <repo>
+#      --enable-auto-merge) so the PR lands hands-off; if off, the PR is opened
+#      but waits for a one-click manual merge.
+#
+# Reference callers in the wild: see any package migrated by apply-dependabot-config.
 
 name: Update Changelog
 
@@ -41,53 +29,7 @@ on:
   release:
     types: [released]
 
-# The App token does the writing; the workflow's own GITHUB_TOKEN only reads.
-permissions:
-  contents: read
-
 jobs:
   update:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate a token from the kaiseki-doc-bot app
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          ref: master
-
-      - name: Update Changelog
-        uses: stefanzweifel/changelog-updater-action@v1
-        with:
-          latest-version: ${{ github.event.release.name }}
-          release-notes: ${{ github.event.release.body }}
-
-      - name: Open changelog PR
-        id: cpr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          base: master
-          branch: changelog/${{ github.event.release.tag_name }}
-          delete-branch: true
-          commit-message: "Update CHANGELOG for ${{ github.event.release.tag_name }}"
-          title: "Update CHANGELOG for ${{ github.event.release.tag_name }}"
-          labels: changelog
-          body: |
-            Automated changelog update for release **${{ github.event.release.tag_name }}**,
-            generated from the release notes by `changelog-updater-action`.
-
-      - name: Enable auto-merge
-        if: steps.cpr.outputs.pull-request-operation == 'created'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        # Best-effort: if "Allow auto-merge" is off, don't fail the run — the PR
-        # stays open for a one-click manual merge.
-        run: |
-          gh pr merge --squash --auto "${{ steps.cpr.outputs.pull-request-number }}" \
-            || echo "::notice::auto-merge unavailable — merge PR #${{ steps.cpr.outputs.pull-request-number }} manually"
+    uses: kaisekidev/.github/.github/workflows/update-changelog.yml@v1
+    secrets: inherit
