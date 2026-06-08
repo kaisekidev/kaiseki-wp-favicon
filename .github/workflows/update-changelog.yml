@@ -1,14 +1,16 @@
-# Thin caller for the shared "Update Changelog" reusable workflow.
+# Thin caller for the shared "Update Changelog" reusable workflow in
+# kaisekidev/.github (.github/workflows/update-changelog.yml@v1).
 #
-# On a published GitHub Release, the reusable workflow in kaisekidev/.github
-# updates CHANGELOG.md from the release notes and opens an auto-merging PR. All
-# the action pins live in that reusable workflow, so there is nothing here for
-# Dependabot to bump.
+# When a non-prerelease GitHub Release is published (the `released` event), the
+# reusable workflow updates CHANGELOG.md from the release notes and opens an
+# auto-merging PR. All the action pins live in that reusable workflow, so there
+# is nothing here for Dependabot to bump.
 #
-# `secrets: inherit` forwards the org APP_ID / APP_PRIVATE_KEY secrets, which the
-# reusable workflow uses to mint a short-lived kaiseki-doc-bot GitHub App token
-# (the org blocks the default GITHUB_TOKEN from opening PRs, so an App token is
-# required to open the changelog PR and trigger its checks).
+# The two secrets are forwarded EXPLICITLY (not `secrets: inherit`), so only the
+# org APP_ID / APP_PRIVATE_KEY reach the reusable workflow — it mints a
+# short-lived kaiseki-doc-bot GitHub App token from them (the org blocks the
+# default GITHUB_TOKEN from opening PRs, so an App token is required to open the
+# changelog PR and trigger its checks). The caller's own token stays read-only.
 #
 # One-time prerequisites (set once, org-wide):
 #   1. The kaiseki-doc-bot App (contents + pull-requests: write) can access the repo.
@@ -22,7 +24,12 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: read
+
 jobs:
   update:
     uses: kaisekidev/.github/.github/workflows/update-changelog.yml@v1
-    secrets: inherit
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
