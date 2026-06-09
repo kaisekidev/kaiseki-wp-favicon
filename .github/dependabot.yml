@@ -17,22 +17,16 @@ updates:
       day: monday
     open-pull-requests-limit: 10
     labels:
-      - dependencies
+      - area:tooling
     groups:
       dev-dependencies:
         dependency-type: development
         patterns:
           - "*"
     ignore:
-      # respect/validation 3.x requires PHP 8.5 — hold at ^2.x while we target 8.4.
-      - dependency-name: "respect/validation"
-        update-types: ["version-update:semver-major"]
       # thecodingmachine/safe 3.x — held: packages don't build green on this major
       # yet. Revisit when the code is adapted to the v3 API / the PHP floor rises.
       - dependency-name: "thecodingmachine/safe"
-        update-types: ["version-update:semver-major"]
-      # jjgrainger/posttypes 3.x — held: the wrapper isn't updated for v3 yet.
-      - dependency-name: "jjgrainger/posttypes"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
@@ -41,8 +35,7 @@ updates:
       interval: weekly
       day: monday
     labels:
-      - dependencies
-      - github-actions
+      - area:ci
     groups:
       github-actions:
         patterns:
